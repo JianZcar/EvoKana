@@ -11,26 +11,12 @@ def apply_layout(seq, keys):
     keys: 2D keyboard template (0 = available, None = unusable)
     """
     mapped = [row[:] for row in keys]  # deep copy
-
-    # collect available positions (only the 0 slots)
-    slots = [(r, c)
-             for r, row in enumerate(keys)
-             for c, v in enumerate(row)
-             if v == 0]
-
-    slot_i = 0  # index into slots
-
-    for v in seq:
-        if v == 0:
-            # skip algorithm empty; DO NOT consume a 0 slot
-            continue
-
-        if slot_i >= len(slots):
-            break  # no more available positions
-
-        r, c = slots[slot_i]
-        mapped[r][c] = v
-        slot_i += 1
+    i = 0
+    for row in range(len(keys)):
+        for col in range(len(keys[0])):
+            if mapped[row][col] is not None:
+                mapped[row][col] = seq[i]
+                i += 1
 
     clean = [[0 if v is None else int(v) for v in row] for row in mapped]
     return clean
@@ -53,7 +39,8 @@ def layout_to_letters(num_layout, keymap):
             if v == 0:
                 letter_row.append('')  # empty slot
             else:
-                letter_row.append(rev_map.get(v, '?'))  # fallback to '?' if not found
+                # fallback to '?' if not found
+                letter_row.append(rev_map.get(v, '?'))
         letter_layout.append(letter_row)
 
     return letter_layout

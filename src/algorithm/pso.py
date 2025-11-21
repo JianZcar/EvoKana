@@ -10,27 +10,18 @@ from config import (KEYS, FINGERS, EFFORT, DISTANCE,
 BEST_LAYOUT = []
 
 
-def decode_continuous_to_layout(pos_scores, rng):
-    """
-    Convert continuous (n_letters x n_slots) matrix into discrete layout.
-    Empty slots can appear anywhere, deterministic via rng.
-    """
+def decode_continuous_to_layout(pos_scores):
+    """Convert continuous (n_letters x n_slots) matrix into discrete layout."""
     pos = pos_scores.copy()
     n_letters, n_slots = pos.shape
     layout = np.zeros(n_slots, dtype=int)
 
-    # deterministic slot shuffle
-    slot_order = np.arange(n_slots)
-    rng.shuffle(slot_order)
-
     for _ in range(n_letters):
         flat_idx = np.argmax(pos)
-        letter_idx, slot_idx_orig = divmod(flat_idx, n_slots)
-        slot_idx = slot_order[0]  # pick next available slot
-        layout[slot_idx] = 1 + letter_idx
+        letter_idx, slot_idx = divmod(flat_idx, n_slots)
+        layout[slot_idx] = 1 + letter_idx  # start_key always 1
         pos[letter_idx, :] = -np.inf
-        pos[:, slot_idx_orig] = -np.inf
-        slot_order = slot_order[1:]  # remove used slot
+        pos[:, slot_idx] = -np.inf
 
     return layout
 
