@@ -3,9 +3,8 @@ from collections import defaultdict
 from typing import List, Dict, Tuple, Optional
 from config import VOWELS, DEFAULT_PINKIES, DEFAULT_RINGS
 
+
 # ---------- Helpers ----------
-
-
 def build_key_pos(keys: List[List[int]]) -> Dict[int, Tuple[int, int]]:
     """
     Build mapping key -> (row, col) for O(1) lookups.
@@ -230,7 +229,6 @@ def hand_balance_metric(keys, fingers,
 
 
 # ---------- Additional metrics requested ----------
-
 def trigrams_sfb_metric(keys: List[List[int]],
                         fingers: List[List[int]],
                         trigrams: List[Tuple[int, int, int, int]],
@@ -414,7 +412,7 @@ def row_jump_metric(keys, bigrams, key_pos=None) -> int:
 def metrics_matrix(keys: List[List[int]],
                    fingers: List[List[int]],
                    effort: List[List[float]],
-                   letter_freq: Dict[int, int],
+                   unigrams: Dict[int, int],
                    bigrams: List[Tuple[int, int, int]],
                    trigrams: Optional[List[Tuple[int, int, int, int]]] = None,
                    distance_matrix: Optional[List[List[float]]] = None) -> Dict:
@@ -429,11 +427,11 @@ def metrics_matrix(keys: List[List[int]],
         "wide_scissors": wide_scissors_metric(keys, fingers, bigrams, key_pos),
         "lat_str": lat_str_metric(keys, fingers, bigrams, key_pos),
         "sfs": sfs_metric(keys, fingers, bigrams, key_pos),
-        "vowels": vowels_metric(keys, fingers, letter_freq, key_pos),
-        "hand_balance": hand_balance_metric(keys, fingers, letter_freq, key_pos),
+        "vowels": vowels_metric(keys, fingers, unigrams, key_pos),
+        "hand_balance": hand_balance_metric(keys, fingers, unigrams, key_pos),
         "trigrams_sfb": trigrams_sfb_metric(keys, fingers, trigrams, key_pos) if trigrams else 0,
-        "finger_load": finger_load_metric(keys, fingers, letter_freq, key_pos),
-        "row_usage": row_usage_metric(keys, letter_freq, key_pos),
+        "finger_load": finger_load_metric(keys, fingers, unigrams, key_pos),
+        "row_usage": row_usage_metric(keys, unigrams, key_pos),
         "distance": (distance_using_matrix(distance_matrix, keys, bigrams, key_pos)
                      if distance_matrix is not None
                      else distance_metric(keys, bigrams, key_pos)),
@@ -443,3 +441,4 @@ def metrics_matrix(keys: List[List[int]],
         "row_jumps": row_jump_metric(keys, bigrams, key_pos),
     }
     return out
+

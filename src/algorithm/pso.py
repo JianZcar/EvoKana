@@ -1,25 +1,36 @@
 import numpy as np
-from algorithm.evaluate import evaluate
-from utils import apply_layout
-from config import KEYS, FINGER, EFFORT, DISTANCE
+from tabulate import tabulate
+from utils import apply_layout, layout_to_letters
+from config import (KEYS, FINGERS, EFFORT, DISTANCE,
+                    UNIGRAMS, BIGRAMS, TRIGRAMS, KEYMAP)
 
 # ===========================
 # Helper functions
 # ===========================
+BEST_LAYOUT = []
 
 
-def decode_continuous_to_layout(pos_scores):
-    """Convert continuous (n_letters x n_slots) matrix into discrete layout."""
+def decode_continuous_to_layout(pos_scores, rng):
+    """
+    Convert continuous (n_letters x n_slots) matrix into discrete layout.
+    Empty slots can appear anywhere, deterministic via rng.
+    """
     pos = pos_scores.copy()
     n_letters, n_slots = pos.shape
     layout = np.zeros(n_slots, dtype=int)
 
+    # deterministic slot shuffle
+    slot_order = np.arange(n_slots)
+    rng.shuffle(slot_order)
+
     for _ in range(n_letters):
         flat_idx = np.argmax(pos)
-        letter_idx, slot_idx = divmod(flat_idx, n_slots)
-        layout[slot_idx] = 1 + letter_idx  # start_key always 1
+        letter_idx, slot_idx_orig = divmod(flat_idx, n_slots)
+        slot_idx = slot_order[0]  # pick next available slot
+        layout[slot_idx] = 1 + letter_idx
         pos[letter_idx, :] = -np.inf
-        pos[:, slot_idx] = -np.inf
+        pos[:, slot_idx_orig] = -np.inf
+        slot_order = slot_order[1:]  # remove used slot
 
     return layout
 
@@ -59,9 +70,9 @@ def initialize_particles(n_particles, n_letters, n_slots,
 def evaluate_particle(position, eval_fn):
     """Decode continuous position to layout and evaluate score."""
     layout = decode_continuous_to_layout(position)
-    print(layout)
-    print(apply_layout(layout, KEYS))
-    score = float(eval_fn(layout)) if eval_fn is not None else np.inf
+    matrix_layout = apply_layout(layout, KEYS)
+    score = float(eval_fn(matrix_layout, FINGERS, EFFORT, UNIGRAMS,
+                  BIGRAMS, TRIGRAMS, DISTANCE)) if eval_fn is not None else np.inf
     return layout, score
 
 
@@ -101,6 +112,8 @@ def evaluate_update_particle(i, positions, primals, primes_cont, primes_decoded,
         no_improve_iters[i] += 1
 
     if score < global_score:
+        BEST_LAYOUT = layout_to_letters(apply_layout(decoded, KEYS), KEYMAP)
+        print(tabulate(BEST_LAYOUT, tablefmt="fancy_grid"))
         global_score = score
         global_best_cont = positions[i].copy()
         global_best_decoded = decoded.copy()
@@ -227,8 +240,8 @@ def pso(n_particles, n_iters, c0, c1,
         )
 
         for i in range(n_particles):
-            decoded, score, global_best_cont,
-            global_best_decoded, global_score = evaluate_update_particle(
+            (decoded, score, global_best_cont,
+             global_best_decoded, global_score) = evaluate_update_particle(
                 i, positions, primals, primes_cont,
                 primes_decoded, no_improve_iters,
                 local_bests_cont, local_best_scores,

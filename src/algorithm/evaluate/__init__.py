@@ -6,7 +6,7 @@ def evaluate(
     keys: List[List[int]],
     fingers: List[List[int]],
     effort: List[List[float]],
-    letter_freq: Dict[int, int],
+    unigrams: Dict[int, int],
     bigrams: List[Tuple[int, int, int]],
     trigrams: Optional[List[Tuple[int, int, int, int]]] = None,
     distance_matrix: Optional[List[List[float]]] = None,
@@ -28,7 +28,7 @@ def evaluate(
         keys=keys,
         fingers=fingers,
         effort=effort,
-        letter_freq=letter_freq or {},
+        unigrams=unigrams or {},
         bigrams=bigrams or [],
         trigrams=trigrams,
         distance_matrix=distance_matrix
@@ -113,4 +113,4 @@ def evaluate(
         # if you want different scaling: score += inward * (rolls_w * 0.5)
 
     # 4) Return final score and full metric breakdown
-    return float(score), metrics
+    return float(score)
