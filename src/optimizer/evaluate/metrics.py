@@ -98,3 +98,37 @@ def get_scissors_score(bigrams: List[Tuple[int, int, int]],
     effort_score = total_effort * 100
     total_score = frequency_score + effort_score
     return total_score
+
+
+def get_hand_balance_score(
+    placement: Dict[int, Tuple[int, int, int, float]],
+    finger_map: List[List[int]],
+) -> float:
+    left_fingers = set()
+    right_fingers = set()
+
+    for row in finger_map:
+        if not row:
+            continue
+        half = len(row) // 2
+        for f in row[:half]:
+            if f:
+                left_fingers.add(f)
+        for f in row[half:]:
+            if f:
+                right_fingers.add(f)
+
+    left_usage = 0.0
+    right_usage = 0.0
+
+    for key, (r, c, finger, freq) in placement.items():
+        f = float(freq)
+
+        if finger in left_fingers:
+            left_usage += f
+        elif finger in right_fingers:
+            right_usage += f
+
+    balance_diff = abs(left_usage - right_usage) * 100.0
+
+    return balance_diff

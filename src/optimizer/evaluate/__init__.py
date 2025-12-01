@@ -2,7 +2,8 @@ from typing import List, Dict, Tuple, Optional
 from config import (WEIGHTS, LAYOUT_TEMPLATE, FINGER_MAP, EFFORT_MAP,
                     DISTANCE_MAP, UNIGRAMS, BIGRAMS, TRIGRAMS, SKIP_BIGRAMS)
 from optimizer.evaluate.metrics import (get_sfb_score, get_uge_score,
-                                        get_lsb_score, get_scissors_score)
+                                        get_lsb_score, get_scissors_score,
+                                        get_hand_balance_score)
 from utils import apply_layout, build_placement
 
 
@@ -18,13 +19,15 @@ def evaluate(
     lsb = get_lsb_score(BIGRAMS, placement, layout)
     sfsb = get_sfb_score(SKIP_BIGRAMS, placement)
     scissors = get_scissors_score(BIGRAMS, placement)
+    balance = get_hand_balance_score(placement, FINGER_MAP)
 
     metrics = {
         "SFB": sfb,
         "UGE": uge,
         "LSB": lsb,
         "SFSB": sfsb,
-        "SCISSORS": scissors
+        "SCISSORS": scissors,
+        "Balance": balance
     }
 
     weights = WEIGHTS

@@ -14,25 +14,26 @@ KEYMAP = {
 
 WEIGHTS = {
     # Single Finger Bigram
-    "SFB": 10.0,
+    "SFB": 15.0,
     # Unigram Effort, encourages high frequency char in low effort key
-    "UGE": 1.0,
-    "LSB": 1.0,
+    "UGE": 6.5,
+    "LSB": 1.8,
     # Single Finger Skip Bigrams
     "SFSB": 1.0,
-    "SCISSORS": 1.0
+    "SCISSORS": 1.3,
+    "Balance": 0.0
 }
 
 l_layout_template = [
-    [None, 0, 0, 0, None],
+    [0, 0, 0, 0, None],
     [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
+    [None, 0, 0, 0, 0],
 ]
 
 r_layout_template = [
-    [None, 0, 0, 0, None],
+    [None, 0, 0, 0, 0],
     [0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, None],
 ]
 
 l_finger_map = [
@@ -82,5 +83,5 @@ SKIP_BIGRAMS = get_skip_bigrams("data/english_words.csv", KEYMAP)
 
 for i, row in enumerate(LAYOUT_TEMPLATE):
     if len(row) % 2 != 0:
-        raise ValueError(f"LAYOUT_TEMPLATE row {
-            i} is asymmetrical (length {len(row)})")
+        error = f"LAYOUT_TEMPLATE row {i} is asymmetrical (length {len(row)})"
+        raise ValueError(error)

@@ -191,6 +191,7 @@ def msa(
         # keep elites (best n_elite individuals)
         elite_idxs = np.argsort(scores)[:n_elite]
         new_pop = [pop[idx].copy() for idx in elite_idxs]
+        new_scores = [scores[idx] for idx in elite_idxs]
 
         # produce offspring until we fill remaining slots
         offspring = []
@@ -217,21 +218,15 @@ def msa(
         with ProcessPoolExecutor(max_workers=n_workers) as ex:
             results = list(ex.map(_evaluate_child_worker, worker_args))
 
-        for _score, s_char in results:
+        for score, s_char in results:
             new_pop.append(s_char)
+            new_scores.append(score)
 
         pop = np.vstack(new_pop)[:n_pop]
+        scores = np.array(new_scores, dtype=float)[:n_pop]
 
-        seen_s_char = set(tuple(int(x) for x in row.tolist()) for row in pop)
-
-        score_args = [
-            (pop[i], 0.0, 0, 0.0, 0.0, int(rng.integers(0, 2**31 - 1)))
-            for i in range(pop.shape[0])
-        ]
-        with ProcessPoolExecutor(max_workers=n_workers) as ex:
-            results = list(ex.map(_evaluate_child_worker, score_args))
-        scores = np.array(
-            [score for (score, _s_char) in results], dtype=float)
+        seen_s_char.update(tuple(int(x)
+                           for x in row.tolist()) for row in pop)
 
         # update global best
         best_idx = int(np.argmin(scores))
@@ -247,17 +242,31 @@ def msa(
         mean_std = pop.reshape(n_pop, -1).std(axis=0).mean()
         if mean_std < 1e-3:
             num_reseed = max(1, n_pop // 2)
-            for r_idx in rng.choice(n_pop, size=num_reseed, replace=False):
-                pop[r_idx] = random_sequence_char(n_slots, n_char, rng)
-                seen_s_char.add(tuple(int(x) for x in pop[r_idx].tolist()))
-            score_args = [
-                (pop[i], 0.0, 0, 0.0, 0.0, int(rng.integers(0, 2**31 - 1)))
-                for i in range(pop.shape[0])
+            reseed_indices = rng.choice(
+                n_pop, size=num_reseed, replace=False)
+            reseed_pop = []
+            reseed_seeds = []
+
+            for r_idx in reseed_indices:
+                new_s_char = random_sequence_char(n_slots, n_char, rng)
+                pop[r_idx] = new_s_char
+                seen_s_char.add(tuple(int(x) for x in new_s_char.tolist()))
+                reseed_pop.append(new_s_char)
+                reseed_seeds.append(int(rng.integers(0, 2**31 - 1)))
+
+            worker_args = [
+                (reseed_pop[i], f_prob, n_iter, f_t0,
+                 f_alpha, reseed_seeds[i])
+                for i in range(len(reseed_pop))
             ]
+
             with ProcessPoolExecutor(max_workers=n_workers) as ex:
-                results = list(ex.map(_evaluate_child_worker, score_args))
-            scores = np.array(
-                [score for (score, _s_char) in results], dtype=float)
+                results = list(ex.map(_evaluate_child_worker, worker_args))
+
+            for i, (score, s_char) in enumerate(results):
+                original_idx = reseed_indices[i]
+                scores[original_idx] = score
+                pop[original_idx] = s_char
 
         if verbose and (gen % max(1, n_gen // 10) == 0):
             print(
